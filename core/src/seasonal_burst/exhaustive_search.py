@@ -27,9 +27,9 @@ def exhaustive_search(ts: np.array, n_period: int, threshold: float, period_leng
     n = len(ts)
     v = np.copy(ts).reshape(n_period, period_length)
     all_bursts = List()
-    inv = 1/n_period
     # Finding burst of length 1 (day) only the z-score are needed
     if min_length == 1:
+        inv = 1/n_period
         for i in range(period_length):
             column = v[:n_period, i]
             # eval += len(column)
@@ -103,7 +103,7 @@ def exhaustive_search(ts: np.array, n_period: int, threshold: float, period_leng
 
 
     mean_v = np.zeros(period_length, dtype=ts.dtype)
-    # Finding burst of length 2 <= l <= max_length
+    # Finding burst of length min_length+1 <= l <= max_length
     for size in range(min_length+1, max_length+1):
         end_index -= 1
         e_span = end_index % period_length
@@ -141,7 +141,6 @@ def exhaustive_search(ts: np.array, n_period: int, threshold: float, period_leng
         for year in range(end_year):
             z_score = v[year, :] - mean_v
             for date in range(period_length):
-                # eval += 1
                 std = std_v[date]
 
                 if std >= 1e-10 and np.abs(z_score[date]/std) >= threshold:

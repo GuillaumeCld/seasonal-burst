@@ -3,10 +3,11 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python=3.12
+  - python=3.13
   - numpy=2.0
   - numba
   - dask
+  - netCDF4
   - xarray
   - pandas
   - pytest

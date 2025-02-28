@@ -1,8 +1,8 @@
 import numpy as np
 from numba import njit, float64, int64, float32
 import matplotlib.pyplot as plt
-from tqdm import tqdm
-
+import pandas as pd
+from pathlib import Path
 
 def explicit_sum_compute(ts, length, n_year, len_year):
 
@@ -194,13 +194,18 @@ def z_score_vectorized_single(ts, n_year, threshold, len_year, min_length, max_l
     return  v, mean_v, std_v, z_score
 
 
-def z_score_numerical_precision():
-    ts_double = np.load("Data/SST/mediterranean_average_processed.npy")
+def run(config):
+
+    data_path = config['data']['path']
+    len_year = int(config['data']['len_year'])
+    max_length = int(config['data']['max_length'])
+    step = int(config['data']['step_length'])
+    lengths = range(step, max_length+1, step)
+
+    ts_double = np.load(data_path)
     ts_single = np.copy(ts_double).astype(np.float32)
-    len_year = 365
     n_year = len(ts_single) // len_year
-    max_length = 365
-    step = 50
+
 
     sums_error_single = []
     sums_error_double = []
@@ -211,7 +216,7 @@ def z_score_numerical_precision():
     z_score_error_single = []
     z_score_error_double = []
 
-    for length in tqdm(range(step, max_length+1, step)):
+    for length in lengths:
         n_seq = len(ts_single) - length + 1
         sums, mean, std, z_score = explicit_z_score_compute(ts_double, length, n_year, len_year)
         sums_single, mean_single, std_single, z_score_single = z_score_vectorized_single(ts_single, n_year, 1, len_year, 1, length)
@@ -255,48 +260,68 @@ def z_score_numerical_precision():
         z_score_error_double.append(np.linalg.norm(z_score - z_score_double) / np.linalg.norm(z_score))
 
 
+    results = {
+        'lengths': lengths,
+        'sums_error_single': sums_error_single,
+        'sums_error_double': sums_error_double,
+        'mean_error_single': mean_error_single,
+        'mean_error_double': mean_error_double,
+        'std_error_single': std_error_single,
+        'std_error_double': std_error_double,
+    }
+    df = pd.DataFrame(results)
+    output_dir = Path(config['output']['results_dir'])
+    name = "results/" + config['output']['metrics_filename']
+    df.to_csv(output_dir / name, index=False)
 
-    fig, axs = plt.subplots(4, 1, figsize=(6, 10), sharex=True)
 
-    axs[0].plot(range(step, max_length+1, step), sums_error_single, label='Single precision')
-    axs[0].plot(range(step, max_length+1, step), sums_error_double, label='Double precision')
-    axs[0].set_xlabel('Length of the sequence')
-    axs[0].set_ylabel('Relative error')
-    axs[0].set_title('Sum Error')
-    # axs[0].set_yscale('log')
+    fig, axs = plt.subplots(2, 2, figsize=(10, 10), sharex=True)
 
-    axs[1].plot(range(step, max_length+1, step), mean_error_single)
-    axs[1].plot(range(step, max_length+1, step), mean_error_double)
-    axs[1].set_xlabel('Length of the sequence')
-    axs[1].set_ylabel('Relative error')
-    axs[1].set_title('Mean Error')
-    # axs[1].set_yscale('log')
+    axs[0,0].plot(range(step, max_length+1, step), sums_error_single, label='Single precision')
+    axs[0,0].plot(range(step, max_length+1, step), sums_error_double, label='Double precision')
+    axs[0,0].set_xlabel('Length of the sequence')
+    axs[0,0].set_ylabel('Relative error')
+    axs[0,0].set_title('Sum Error')
 
-    axs[2].plot(range(step, max_length+1, step), std_error_single)
-    axs[2].plot(range(step, max_length+1, step), std_error_double)
-    axs[2].set_xlabel('Length of the sequence')
-    axs[2].set_ylabel('Relative error')
-    axs[2].set_title('Standard Deviation Error')
-    # axs[2].set_yscale('log')
+    axs[0,1].plot(range(step, max_length+1, step), mean_error_single)
+    axs[0,1].plot(range(step, max_length+1, step), mean_error_double)
+    axs[0,1].set_xlabel('Length of the sequence')
+    axs[0,1].set_ylabel('Relative error')
+    axs[0,1].set_title('Mean Error')
 
-    axs[3].plot(range(step, max_length+1, step), z_score_error_single)
-    axs[3].plot(range(step, max_length+1, step), z_score_error_double)
-    axs[3].set_xlabel('Length of the sequence')
-    axs[3].set_ylabel('Relative error')
-    axs[3].set_title('Z-score Error')
-    axs[3].ticklabel_format(axis='y', style='sci', scilimits=(0,0))
-    # axs[3].set_yscale('log')
+    axs[1,0].plot(range(step, max_length+1, step), std_error_single)
+    axs[1,0].plot(range(step, max_length+1, step), std_error_double)
+    axs[1,0].set_xlabel('Length of the sequence')
+    axs[1,0].set_ylabel('Relative error')
+    axs[1,0].set_title('Standard Deviation Error')
+
+    axs[1,1].plot(range(step, max_length+1, step), z_score_error_single)
+    axs[1,1].plot(range(step, max_length+1, step), z_score_error_double)
+    axs[1,1].set_xlabel('Length of the sequence')
+    axs[1,1].set_ylabel('Relative error')
+    axs[1,1].set_title('Z-score Error')
+    axs[1,1].ticklabel_format(axis='y', style='sci', scilimits=(0,0))
 
     lines, labels = [], []
-    for ax in axs:
-        ax_lines, ax_labels = ax.get_legend_handles_labels()
-        lines.extend(ax_lines)
-        labels.extend(ax_labels)
+    for row in axs:
+        for ax in row:
+            ax_lines, ax_labels = ax.get_legend_handles_labels()
+            lines.extend(ax_lines)
+            labels.extend(ax_labels)
 
     fig.legend(lines, labels, loc='upper center', ncol=2, bbox_to_anchor=(0.5, 1.025))
     plt.tight_layout()
-    plt.savefig('Figures/numerical_precision.pdf', format='pdf', bbox_inches='tight', pad_inches=0.15)
+
+    plt.savefig(output_dir / 'figures/numerical_precision.pdf', format='pdf', bbox_inches='tight', pad_inches=0.5)
     plt.show()
 
 if __name__ == '__main__':
-    z_score_numerical_precision()
+    config = {
+        'data': {
+            'path': "Data/SST/mediterranean_average_processed.npy",
+            'len_year': 365,
+            'max_length': 365,
+            'step': 50
+        }
+    }
+    run(config)
