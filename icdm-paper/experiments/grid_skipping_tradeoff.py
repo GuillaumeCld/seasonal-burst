@@ -24,13 +24,13 @@ logger = logging.getLogger(__name__)
 
 def run_grid_experiment(ts: np.ndarray, lat_idx: int, lon_idx: int, config: dict) -> Dict:
     """Run experiment for a single grid point.
-    
+
     Parameters:
         ts: Time series data for the grid point
         lat_idx: Latitude index
         lon_idx: Longitude index
         config: Configuration dictionary
-        
+
     Returns:
         Dictionary containing experiment results
     """
@@ -43,48 +43,66 @@ def run_grid_experiment(ts: np.ndarray, lat_idx: int, lon_idx: int, config: dict
     skip_factors = config['parameters']['skip_factors']
     intra_period = config['data'].get('intra_period', False)
     skip_method = config['parameters']['skip_method']
-    
+
     # Get baseline results
     baseline_bursts, baseline_time = run_exhaustive_search(
         ts, n_period, period_length, min_length, max_length, threshold, intra_period
     )
-    
+
     if len(baseline_bursts) == 0:
         return None  # Skip grid points with no baseline bursts
-        
+
     baseline_days = bursts_to_days(baseline_bursts)
-    
+
     results = []
-    
+
     # Test different skip factors
     for skip_factor in skip_factors:
-            
+
         bursts, exec_time = evaluate_skipping_strategy(
             ts, skip_factor, n_period, period_length,
             min_length, max_length, threshold, intra_period,
             skip_method=skip_method
         )
-        
-        # if len(bursts) == 0:
-        #     continue
-            
-        # Compute metrics
-        detected_days = bursts_to_days(bursts)
-        
-        results.append({
-            'lat': lat_idx,
-            'lon': lon_idx,
-            'skip_factor': skip_factor,
-            'execution_time': exec_time,
-            'speedup': baseline_time / exec_time,
-            'n_bursts': len(bursts),
-            'day_precision': precision(baseline_days, detected_days),
-            'hit_precision_25': hit_precision(baseline_bursts, bursts, 25),
-            'hit_precision_50': hit_precision(baseline_bursts, bursts, 50),
-            'hit_precision_75': hit_precision(baseline_bursts, bursts, 75),
-            'hit_precision_95': hit_precision(baseline_bursts, bursts, 95)
-        })
-    
+
+        if len(bursts) != 0:
+            # Compute metrics
+            detected_days = bursts_to_days(bursts)
+
+            results.append({
+                'lat': lat_idx,
+                'lon': lon_idx,
+                'skip_factor': skip_factor,
+                'execution_time': exec_time,
+                'baseline_time': baseline_time,
+                'speedup': baseline_time / exec_time,
+                'n_bursts': len(bursts),
+                'detected_days': len(detected_days),
+                'baseline_days': len(baseline_days),
+                'day_precision': precision(baseline_days, detected_days),
+                'hit_precision_25': hit_precision(baseline_bursts, bursts, 25),
+                'hit_precision_50': hit_precision(baseline_bursts, bursts, 50),
+                'hit_precision_75': hit_precision(baseline_bursts, bursts, 75),
+                'hit_precision_95': hit_precision(baseline_bursts, bursts, 95)
+            })
+        else:
+            results.append({
+                'lat': lat_idx,
+                'lon': lon_idx,
+                'skip_factor': skip_factor,
+                'execution_time': exec_time,
+                'baseline_time': baseline_time,
+                'speedup': baseline_time / exec_time,
+                'n_bursts': 0,
+                'detected_days': 0,
+                'baseline_days': len(baseline_days),
+                'day_precision': 0,
+                'hit_precision_25': 0,
+                'hit_precision_50': 0,
+                'hit_precision_75': 0,
+                'hit_precision_95': 0
+            })
+
     return results
 
 
@@ -93,117 +111,118 @@ def plot_grid_results(results_df: pd.DataFrame, output_dir: Path, skip_method: s
     # Create figure directory
     fig_dir = output_dir / "figures"
     fig_dir.mkdir(exist_ok=True)
-    
-    # Plot precision distribution for each skip factor
-    plt.figure(figsize=(12, 8))
-    skip_factors = sorted(results_df['skip_factor'].unique())
-    
-    # Create boxplot for day precision
-    plt.subplot(2, 1, 1)
-    box_data = [results_df[results_df['skip_factor'] == sf]['day_precision'] 
-                for sf in skip_factors]
-    plt.boxplot(box_data, labels=skip_factors)
-    plt.axhline(y=0.95, color='r', linestyle='--', label='Target (95%)')
-    plt.xlabel('Skip Factor')
-    plt.ylabel('Day Precision')
-    plt.title(f'{skip_method} Skipping: Day Precision Distribution')
-    plt.grid(True, alpha=0.3)
-    plt.legend()
-    
-    # Create boxplot for hit precision (50%)
-    plt.subplot(2, 1, 2)
-    box_data = [results_df[results_df['skip_factor'] == sf]['hit_precision_50'] 
-                for sf in skip_factors]
-    plt.boxplot(box_data, labels=skip_factors)
-    plt.axhline(y=0.95, color='r', linestyle='--', label='Target (95%)')
-    plt.xlabel('Skip Factor')
-    plt.ylabel('Hit Precision (50%)')
-    plt.title(f'{skip_method} Skipping: Hit Precision Distribution')
-    plt.grid(True, alpha=0.3)
-    plt.legend()
-    
+    print(results_df.head(1))
+    skip_factors = pd.to_numeric(
+        results_df['skip_factor'], errors='coerce').dropna().astype(int).unique()
+
+    info_per_skip_factor = {}
+    for skip_factor, group in results_df.groupby('skip_factor'):
+        total_baseline_days = pd.to_numeric(
+            group['baseline_days'], errors='coerce').fillna(0).sum()
+        total_baseline_time = pd.to_numeric(
+            group['baseline_time'], errors='coerce').fillna(0).sum()
+        total_execution_time = pd.to_numeric(
+            group['execution_time'], errors='coerce').fillna(0).sum()
+        detected_days = pd.to_numeric(
+            group['detected_days'], errors='coerce').fillna(0).sum()
+
+        if total_execution_time > 0 and total_baseline_days > 0:  # Avoid division by zero
+            speedup = total_baseline_time / total_execution_time
+            day_precision = detected_days / total_baseline_days
+        else:
+            speedup, day_precision = 0, 0  # Handle division errors gracefully
+
+        info_per_skip_factor[skip_factor] = {
+            "speedup": speedup,
+            "day_precision": day_precision
+        }
+    fig1, ax1 = plt.subplots(figsize=(10, 6))
+    ax2 = ax1.twinx()
+
+    x = np.arange(len(skip_factors))
+    width = 0.35
+
+    day_precision_values = [info_per_skip_factor[k]
+                            ["day_precision"] for k in skip_factors]
+    speedup_values = [info_per_skip_factor[k]["speedup"] for k in skip_factors]
+
+    print(day_precision_values)
+    print(speedup_values)
+
+    rects1 = ax1.bar(x - width/2, day_precision_values, width,
+                     label='Day Precision', color='lightblue')
+    rects2 = ax2.bar(x + width/2, speedup_values, width,
+                     label='Speedup', color='darkblue')
+
+    ax1.set_xlabel('Skip factor')
+    ax1.set_ylabel('Precision', color='lightblue')
+    ax2.set_ylabel('Speedup', color='darkblue')
+    ax1.set_title('Date Skipping: Precision and Speedup')
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(skip_factors)
+
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper right')
+
     plt.tight_layout()
-    plt.savefig(fig_dir / f"{skip_method}_precision_distribution.pdf")
+    plt.savefig(output_dir / "figures/grid_tradeoff.png", bbox_inches='tight')
     plt.close()
-    
-    # Plot speedup distribution
-    plt.figure(figsize=(10, 6))
-    box_data = [results_df[results_df['skip_factor'] == sf]['speedup'] 
-                for sf in skip_factors]
-    plt.boxplot(box_data, labels=skip_factors)
-    plt.xlabel('Skip Factor')
-    plt.ylabel('Speedup')
-    plt.title(f'{skip_method} Skipping: Speedup Distribution')
-    plt.grid(True, alpha=0.3)
-    plt.savefig(fig_dir / f"{skip_method}_speedup_distribution.pdf")
-    plt.close()
-    
-    # Create heatmaps for different metrics
-    metrics = ['day_precision', 'hit_precision_50', 'speedup']
-    for metric in metrics:
-        for skip_factor in skip_factors:
-            metric_data = results_df[results_df['skip_factor'] == skip_factor]
-            grid_data = np.full((max(metric_data['lat']) + 1, 
-                               max(metric_data['lon']) + 1), np.nan)
-            
-            for _, row in metric_data.iterrows():
-                grid_data[int(row['lat']), int(row['lon'])] = row[metric]
-            
-            plt.figure(figsize=(10, 8))
-            plt.imshow(grid_data, cmap='viridis', aspect='auto')
-            plt.colorbar(label=metric)
-            plt.title(f'{skip_method} Skipping: {metric} (Skip Factor {skip_factor})')
-            plt.xlabel('Longitude Index')
-            plt.ylabel('Latitude Index')
-            plt.savefig(fig_dir / f"{skip_method}_{metric}_sf{skip_factor}_heatmap.pdf")
-            plt.close()
 
 
 def run(config: dict) -> None:
     """Run grid-based skipping tradeoff experiments."""
     logger.info("Starting grid skipping tradeoff experiments")
-    
+
     # Load data
     ds = xr.open_dataset(config['data']['path'])
     var_name = config['data']['variable']
     data = ds[var_name].values.astype(np.float64)
-    
+
     # Create output directory
     output_dir = Path(config['output']['results_dir'])
     output_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Get grid dimensions
     n_time, n_lat, n_lon = data.shape
-    
-    # Find valid grid points (non-NaN)
-    valid_points = []
-    tdata = data[0,:,:]
-    for i in range(n_lat):
-        for j in range(n_lon):
-            if not np.isnan(tdata[i, j]):
-                valid_points.append((i, j))
-    
-    all_results = []
-    
-    # Run experiments for each grid point
-    for lat_idx, lon_idx in tqdm(valid_points, desc="Processing grid points"):
-        ts = data[:, lat_idx, lon_idx]
-        
-        # Run experiment for current grid point
-        results = run_grid_experiment(ts, lat_idx, lon_idx, config)
-        
-        if results is not None:
-            all_results.extend(results)
-    
-    # Convert results to DataFrame
-    results_df = pd.DataFrame(all_results)
-    
-    # Save results
-    results_df.to_csv(output_dir / config['output']['metrics_filename'], index=False)
-    
+
+    name = "results/" + config['output']['metrics_filename']
+
+    if not Path(output_dir / name).exists():
+
+        # Find valid grid points (non-NaN)
+        valid_points = []
+        tdata = data[0, :, :]
+        if var_name == "tp":
+            valid_points = [(i, j) for j in range(n_lon)
+                            for i in range(n_lat) if not np.all(data[:, i, j] == 0)]
+        else:
+            valid_points = [(i, j) for j in range(n_lon) for i in range(
+                n_lat) if not np.all(np.isnan(tdata[i, j]))]
+
+        all_results = []
+
+        # Run experiments for each grid point
+        for lat_idx, lon_idx in tqdm(valid_points, desc="Processing grid points"):
+            ts = data[:, lat_idx, lon_idx]
+
+            # Run experiment for current grid point
+            results = run_grid_experiment(ts, lat_idx, lon_idx, config)
+
+            if results is not None:
+                all_results.extend(results)
+
+        # Convert results to DataFrame
+        results_df = pd.DataFrame(all_results)
+        results_df.to_csv(output_dir / name, index=False)
+
+    else:
+        results_df = pd.read_csv(output_dir / name)
+
     # Create plots
-    plot_grid_results(results_df, output_dir, config['parameters']['skip_method'])
-    
+    plot_grid_results(results_df, output_dir,
+                      config['parameters']['skip_method'])
+
     logger.info("Completed grid skipping tradeoff experiments")
 
 

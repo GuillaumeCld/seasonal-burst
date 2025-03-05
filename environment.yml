@@ -16,4 +16,5 @@ dependencies:
   - seaborn
   - scipy
   - plotly
+  - tabulate
 

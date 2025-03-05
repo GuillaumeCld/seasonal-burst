@@ -268,6 +268,8 @@ def run(config):
         'mean_error_double': mean_error_double,
         'std_error_single': std_error_single,
         'std_error_double': std_error_double,
+        'z-score_error_single': z_score_error_single,
+        'z-score_error_double': z_score_error_double
     }
     df = pd.DataFrame(results)
     output_dir = Path(config['output']['results_dir'])

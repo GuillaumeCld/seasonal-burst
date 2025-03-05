@@ -14,6 +14,7 @@ import numerical
 import skipping_tradeoff
 import grid_skipping_tradeoff
 import sum_computation
+import online_scaling
 
 # Setup logging
 logging.basicConfig(
@@ -49,6 +50,8 @@ def run_experiment(name: str, config_path: Path) -> None:
             grid_skipping_tradeoff.run(config)
         elif name == "sum_computation":
             sum_computation.run(config)
+        elif name == "online_scaling":
+            online_scaling.run(config)
         else:
             logger.error(f"Unknown experiment: {name}")
             return
@@ -65,7 +68,7 @@ def main():
         "--experiments",
         nargs="+",
         choices=["all", "exhaustive_algo_scaling", "numerical", "skipping_tradeoff", 
-                "grid_skipping_tradeoff", "sum_computation"],
+                "grid_skipping_tradeoff", "sum_computation", "online_scaling"],
         default=["all"],
         help="Experiments to run"
     )
@@ -77,7 +80,8 @@ def main():
         "numerical": "configs/numerical.ini",
         "skipping_tradeoff": "configs/skipping_tradeoff.ini",
         "grid_skipping_tradeoff": "configs/grid_skipping_tradeoff.ini",
-        "sum_computation": "configs/sum_computation.ini"
+        "sum_computation": "configs/sum_computation.ini",
+        "online_scaling": "configs/online_scaling.ini"
     }
     
     # Determine which experiments to run
