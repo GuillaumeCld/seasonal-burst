@@ -1,0 +1,60 @@
+:PROPERTIES:
+:ID:       8bc0f92d-8def-45ca-8e80-8f6519a99050
+:END:
+#+title: Burst Temperature vs WBGT
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="org.css"/>
+
+
+
+* Burst Recap
+
+A /burst/ (or climate burst) is defined as a time interval starting in a given year \(y\) whose accumulated values are unusually high or low for a given climate variable (e.g. +5°C temperature anomaly from July 3 to July 16, 2003) compared to the same time period in all years. Our approach identifies bursts over all possible time intervals, regardless of their duration or season, enabling the detection of short events (e.g. a 3-day burst in April of some year) as well as longer anomalies (e.g. a 15-day burst from December 26 of year \(y\) to January 10 of year  \(y+1\)).
+
+
+Computationally, a climate burst is characterized by its z-score that quantifies the relative position of an individual data point within a distribution. This score represents the number of standard deviations by which a data point deviates from the mean of the distribution. The higher the absolute z-score value of a data point, the more anomalous it is. The z-score is calculated as follows:
+\[
+z = \frac{x - \mu}{\sigma},
+\]
+where \(z\) is the z-score, \(x\) the observed data value (e.g. the sum of the temperatures over a certain date range), \(\mu\) the mean of the distribution (e.g. of sums), and \(\sigma\) the standard deviation.
+
+As an illustrative climate example, the z-score of rainfall in Dakar over a certain time interval (e.g. July 8 to July 23) of a certain year (e.g. 2004) would be the z-score of the total rainfall over that period in Dakar based on the total rainfall in Dakar between July 8 to July 23 in each year on record. The z-score provides a contextual measure of abnormality based on the typical values over the date range. This reflects the fact that the severity of an anomaly is also contextual.
+
+Given that bursts can be of any duration, some of these may be included in, or exhibit a high level of overlap with one another. This leads to a considerable degree of redundancy. We merge them into continuous sequences (e.g. merging overlapping bursts from July 3–16 and July 10–19 into a single event spanning July 3–19).
+
+* Data
+
+Both data are from Paris and are derived from ERA5 and ERA-heat data covering the months of June, July, and August, which is equivalent to 92 days (2,208 hours), from 1974 to 2023.
+
+- *Temperature*: temperature 2 meter above surface.
+- *WBGT* (Wet Bulb Globe Temperature): a heat stress indicator calculated using air temperature, relative humidity, wind strength and mean radiative temperature that accounts for radiation).
+
+* Experiment
+
+** Setup
+
+To compute the bursts, we use the same parameters on both time series. The parameters are as follows:
+
+- z-score = 3 (at least three standard deviation from the mean)
+- minimum length = 3 (at least three hours)
+- maximum length = 240 (at most 10 days)
+
+
+ Remember that we are merging overlapping bursts (at least one hour in common), so we may encounter  events spanning more than 10 days.
+
+
+** Case Study
+
+We first show in two tables the bursts starting and ending dates, length (duration in hour) and type (hot or cold) for both the temperature and WBGT.
+#+INCLUDE: "/home/guillaume/Devel/ClimBurst/notebooks/double_table.html" export  html
+
+Next, we show in three similar tables, the same information but this time with bursts that overlap (at least one hour in common) at the same dates for the temperature and WBGT. We display the information of the two overlapping bursts as well as the information of the overlap. Then, we  show the exclusive (non-overlapping) burst of the temperature and WBGT.
+
+#+INCLUDE: "/home/guillaume/Devel/ClimBurst/notebooks/triple_table.html" export  html
+
+Then, we show the two time series, with the bursts highlighted in color (with a color per merged burst).  We show in black dashed line the hourly mean (the mean values of this specific hour of this specific day for all years), in black dotted line a threshold which is 3 standard deviations above the mean. Each gray dashed line represents a year.
+#+INCLUDE: "/home/guillaume/Devel/ClimBurst/notebooks/double_series.html" export  html
+
+Finally, we show the bar plot of the number of hours belonging to burst per year for both the temperature (red) and WBGT (blue).
+#+INCLUDE: "/home/guillaume/Devel/ClimBurst/notebooks/bar.html" export  html
+
+** Analysis
