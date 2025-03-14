@@ -3,7 +3,7 @@ import xarray as xr
 from dask.distributed import Client
 
 # Local imports
-from core.src.utils.post_process import merge_bursts
+from utils.post_process import merge_bursts
 
 
 def process_single_coordinate(ts: np.array, n_period: int, threshold: float, period_length: int, min_length: int, max_length: int, compute_fct: callable) -> list:
@@ -33,7 +33,7 @@ def process_single_coordinate(ts: np.array, n_period: int, threshold: float, per
     )
 
 
-def process_grid_with_futures(grid: xr.DataArray, valid_coordinates: np.array, threshold: float, n_period: int, period_length: int, min_length: int, max_length: int, compute_fct: callable, n_workers: int) -> np.array:
+def process_grid(grid: xr.DataArray, valid_coordinates: np.array, threshold: float, n_period: int, period_length: int, min_length: int, max_length: int, compute_fct: callable, n_workers: int) -> np.array:
     """
     Compute the merged burst representation for a grid of coordinates using the given function and parameters.
     Parameters:
