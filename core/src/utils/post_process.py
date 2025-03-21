@@ -24,6 +24,7 @@ def merge_bursts(sequences):
 
     return merged_intervals
 
+
 def signed_merged(intervals, sign):
     """
     Compute the union of the given intervals.

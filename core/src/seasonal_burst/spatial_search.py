@@ -1,12 +1,19 @@
 import numpy as np
 import xarray as xr
 from dask.distributed import Client
-
 # Local imports
 from utils.post_process import merge_bursts
 
 
-def process_single_coordinate(ts: np.array, n_period: int, threshold: float, period_length: int, min_length: int, max_length: int, compute_fct: callable) -> list:
+def process_single_coordinate(
+    ts: np.array,
+    n_period: int,
+    threshold: float,
+    period_length: int,
+    min_length: int,
+    max_length: int,
+    compute_fct: callable,
+) -> list:
     """
     Compute the merged burst representation for a single coordinate using the given function and parameters.
     Parameters:
@@ -17,23 +24,26 @@ def process_single_coordinate(ts: np.array, n_period: int, threshold: float, per
         min_length (int): minimum length of a burst
         max_length (int): maximum length of a burst
         compute_fct (callable): function to compute the bursts
-    
+
     Returns:
-        list of the merged burst representation (i_min, i_max, sign) 
+        list of the merged burst representation (i_min, i_max, sign)
     """
     return merge_bursts(
-        compute_fct(
-            ts,
-            n_period,
-            threshold,
-            period_length,
-            min_length,
-            max_length
-        )
+        compute_fct(ts, n_period, threshold, period_length, min_length, max_length)
     )
 
 
-def process_grid(grid: xr.DataArray, valid_coordinates: np.array, threshold: float, n_period: int, period_length: int, min_length: int, max_length: int, compute_fct: callable, n_workers: int) -> np.array:
+def process_grid(
+    grid: xr.DataArray,
+    valid_coordinates: np.array,
+    threshold: float,
+    n_period: int,
+    period_length: int,
+    min_length: int,
+    max_length: int,
+    compute_fct: callable,
+    n_workers: int,
+) -> np.array:
     """
     Compute the merged burst representation for a grid of coordinates using the given function and parameters.
     Parameters:
@@ -46,11 +56,10 @@ def process_grid(grid: xr.DataArray, valid_coordinates: np.array, threshold: flo
         max_length (int): maximum length of a burst
         compute_fct (callable): function to compute the bursts
         n_workers (int): number of workers
-        
+
     Returns:
         grid_list (np.array): grid of the merged burst representation
     """
-
 
     values = grid.values.astype(np.float64)
     threads_per_worker = 1
@@ -58,10 +67,18 @@ def process_grid(grid: xr.DataArray, valid_coordinates: np.array, threshold: flo
     with Client(n_workers=n_workers, threads_per_worker=threads_per_worker) as client:
         futures = {}
         # Submit tasks
-        for (i, j) in valid_coordinates:
+        for i, j in valid_coordinates:
             ts = values[:, i, j]
-            future = client.submit(process_single_coordinate, ts, n_period,
-                                   threshold, period_length, min_length, max_length, compute_fct)
+            future = client.submit(
+                process_single_coordinate,
+                ts,
+                n_period,
+                threshold,
+                period_length,
+                min_length,
+                max_length,
+                compute_fct,
+            )
             futures[(i, j)] = future
 
         results = client.gather(futures)

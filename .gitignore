@@ -20,22 +20,11 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual Environment
-venv/
-env/
-ENV/
-.env
 
 # IDE
-.idea/
 .vscode/
-*.swp
-*.swo
-*~
 
-# Jupyter Notebook
-.ipynb_checkpoints
-*.ipynb
+
 
 # Distribution / packaging
 .Python
@@ -79,9 +68,13 @@ docs/api/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+
 Data/ERA5_land/t2m_daily_avg_1950_2023.nc
 Data/ERA5_land/tp_daily_sum_1950_2023.nc
 Data/SST/merged_data_processed.nc
 heat_stress_case_study/deces.csv
 icdm-paper/results/grid_tradeoff_metrics_t2m.csv
 icdm-paper/results/grid_tradeoff_metrics.csv
+
+heat_stress_case_study/*.html

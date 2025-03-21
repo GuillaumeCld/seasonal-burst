@@ -35,7 +35,7 @@ def overlapping(
 
     if max_overlap == -1:
         return overlap_days >= min_overlap
-    
+
     return min_overlap <= overlap_days <= max_overlap
 
 

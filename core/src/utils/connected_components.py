@@ -26,7 +26,7 @@ def neighbors(i: int, j: int, nx: int, ny: int):
     return neighbors
 
 
-def find_connected_components(vertices: list, edges: list, directed: bool=False):
+def find_connected_components(vertices: list, edges: list, directed: bool = False):
     """
     Compute the connected components of a graph using a BFS algorithm  given its vertices and edges.
 
@@ -73,7 +73,9 @@ def find_connected_components(vertices: list, edges: list, directed: bool=False)
     return components
 
 
-def connected_components_bursts(grid_bursts: np.array, min_overlap: int=1, directed: bool=False):
+def connected_components_bursts(
+    grid_bursts: np.array, min_overlap: int = 1, directed: bool = False
+):
     """
     Compute the connected components of the bursts in a grid.
 
@@ -82,7 +84,6 @@ def connected_components_bursts(grid_bursts: np.array, min_overlap: int=1, direc
         min_overlap (int): minimum number of overlapping observations
         directed (bool): directed or undirected graph
     """
-
 
     nx, ny = grid_bursts.shape
     grid_mark = np.full((nx, ny), False, dtype=bool)

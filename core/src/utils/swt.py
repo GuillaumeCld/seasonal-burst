@@ -17,7 +17,7 @@ def SWT_per_year(ts: np.ndarray, n_year: int, len_year: int, n_level=9):
     Returns:
     list: A list of SWTs for each year, where each SWT is a list of levels.
     """
-    
+
     levels_matrices = []
 
     brick_sizes = np.empty(n_level, dtype=np.int32)
@@ -28,9 +28,9 @@ def SWT_per_year(ts: np.ndarray, n_year: int, len_year: int, n_level=9):
         n_bricks_wavelet = len_year // size
         n_bricks = n_bricks_wavelet * 2
 
-        #if size // 2 + n_bricks_wavelet * size < len_year:
+        # if size // 2 + n_bricks_wavelet * size < len_year:
         #    n_bricks += 2
-        #else:
+        # else:
         #    n_bricks += 1
         ns_bricks[i] = n_bricks
 
@@ -38,15 +38,14 @@ def SWT_per_year(ts: np.ndarray, n_year: int, len_year: int, n_level=9):
     for level in range(n_level):
         brick_size = brick_sizes[level]
         n_bricks = ns_bricks[level]
-        level_matrice = np.empty(
-            (n_year, n_bricks), dtype=np.float64)
+        level_matrice = np.empty((n_year, n_bricks), dtype=np.float64)
 
         for year in range(n_year):
             i_year = year * len_year
 
             if level == 0:
                 m = 1
-                previous_aggregate = ts[i_year: i_year + len_year]
+                previous_aggregate = ts[i_year : i_year + len_year]
             else:
                 m = 2
                 previous_aggregate = levels_matrices[level - 1][year, :]
@@ -64,18 +63,15 @@ def SWT_per_year(ts: np.ndarray, n_year: int, len_year: int, n_level=9):
             else:
                 level_matrice[year, n_bricks - 2] = np.nan
             if year != n_year - 1 and not (year == n_year - 2 and brick_size == 512):
-                start = (
-                    i_year + (n_bricks - 1) * brick_size // 2 + brick_size // 2
-                )
+                start = i_year + (n_bricks - 1) * brick_size // 2 + brick_size // 2
                 level_matrice[year, n_bricks - 1] = previous_aggregate[
                     (n_bricks - 1) * m
-                ] + np.sum(ts[start: start + brick_size // 2])
+                ] + np.sum(ts[start : start + brick_size // 2])
             else:
                 level_matrice[year, n_bricks - 1] = np.nan
 
         levels_matrices.append(level_matrice)
     return levels_matrices
-
 
 
 @njit()
@@ -87,10 +83,13 @@ def columns_z_scores(column):
     return z_scores
 
 
-
-
 def z_score_SWT(
-    levels_matrices: list[np.ndarray], n_year: int, len_year: int, threshold: float, ts: np.ndarray, n_level = 9
+    levels_matrices: list[np.ndarray],
+    n_year: int,
+    len_year: int,
+    threshold: float,
+    ts: np.ndarray,
+    n_level=9,
 ):
     """
     Compute the z-score of the yearly shifted wavelet transform (SWT) data and return the flagged columns and their flagged bricks (years).
@@ -105,7 +104,6 @@ def z_score_SWT(
     - flagged_columns (List): A list of flagged columns, where each item is a tuple containing the level, brick, and flagged years.
     """
 
-    
     swt = copy.deepcopy(levels_matrices)
     for level in range(n_level):
         level_matrix = levels_matrices[level]

@@ -1,8 +1,10 @@
 import numpy as np
 
-def exhaustive_search(ts, n_year, threshold, len_year, agg_fn, min_length=1, max_length=365):
-    """
-    """
+
+def exhaustive_search(
+    ts, n_year, threshold, len_year, agg_fn, min_length=1, max_length=365
+):
+    """ """
     n = len(ts)
     v = np.copy(ts).reshape(n_year, len_year)
     all_bursts = []
@@ -13,7 +15,7 @@ def exhaustive_search(ts, n_year, threshold, len_year, agg_fn, min_length=1, max
         for year in range(n_year):
             for obs in range(len_year):
                 start = year * len_year + obs
-                end = start + length 
+                end = start + length
                 if end > n:
                     break
                 v[year, obs] = agg_fn(ts[start:end])
@@ -24,13 +26,12 @@ def exhaustive_search(ts, n_year, threshold, len_year, agg_fn, min_length=1, max
             column = v[:n_valid_years, interval]
             mean = np.add.reduce(column) / n_valid_years
             squared_mean = np.add.reduce(np.square(column)) / n_valid_years
-            std = np.sqrt(squared_mean - mean*mean)
+            std = np.sqrt(squared_mean - mean * mean)
             z_score = (column - mean) / std
             flagged_years = np.where(np.abs(z_score) >= threshold)[0]
             for y in flagged_years:
                 start = interval + y * len_year
-                all_bursts.append(
-                    (start, start+length-1, z_score[y]))
+                all_bursts.append((start, start + length - 1, z_score[y]))
 
         # Second loop for the condition: interval >= max_sequence
         # for those intervals the last valid year is excluded
@@ -39,20 +40,20 @@ def exhaustive_search(ts, n_year, threshold, len_year, agg_fn, min_length=1, max
             column = v[:n_valid_years, interval]
             mean = np.add.reduce(column) / n_valid_years
             squared_mean = np.add.reduce(np.square(column)) / n_valid_years
-            std = np.sqrt(squared_mean - mean*mean)
+            std = np.sqrt(squared_mean - mean * mean)
             z_score = (column - mean) / std
             flagged_years = np.where(np.abs(z_score) >= threshold)[0]
             for y in flagged_years:
                 start = interval + y * len_year
-                all_bursts.append(
-                    (start, start+length-1, z_score[y]))
-                
+                all_bursts.append((start, start + length - 1, z_score[y]))
+
     return all_bursts
 
 
-def skipping_length(ts, n_year, threshold, len_year, agg_fn, skip_factor, min_length=1, max_length=365):
-    """
-    """
+def skipping_length(
+    ts, n_year, threshold, len_year, agg_fn, skip_factor, min_length=1, max_length=365
+):
+    """ """
     n = len(ts)
     v = np.copy(ts).reshape(n_year, len_year)
     all_bursts = []
@@ -64,7 +65,7 @@ def skipping_length(ts, n_year, threshold, len_year, agg_fn, skip_factor, min_le
         for year in range(n_year):
             for obs in range(len_year):
                 start = year * len_year + obs
-                end = start + length 
+                end = start + length
                 if end > n:
                     break
                 v[year, obs] = agg_fn(ts[start:end])
@@ -75,13 +76,12 @@ def skipping_length(ts, n_year, threshold, len_year, agg_fn, skip_factor, min_le
             column = v[:n_valid_years, interval]
             mean = np.add.reduce(column) / n_valid_years
             squared_mean = np.add.reduce(np.square(column)) / n_valid_years
-            std = np.sqrt(squared_mean - mean*mean)
+            std = np.sqrt(squared_mean - mean * mean)
             z_score = (column - mean) / std
             flagged_years = np.where(np.abs(z_score) >= threshold)[0]
             for y in flagged_years:
                 start = interval + y * len_year
-                all_bursts.append(
-                    (start, start+length-1, z_score[y]))
+                all_bursts.append((start, start + length - 1, z_score[y]))
 
         # Second loop for the condition: interval >= max_sequence
         # for those intervals the last valid year is excluded
@@ -90,22 +90,22 @@ def skipping_length(ts, n_year, threshold, len_year, agg_fn, skip_factor, min_le
             column = v[:n_valid_years, interval]
             mean = np.add.reduce(column) / n_valid_years
             squared_mean = np.add.reduce(np.square(column)) / n_valid_years
-            std = np.sqrt(squared_mean - mean*mean)
+            std = np.sqrt(squared_mean - mean * mean)
             z_score = (column - mean) / std
             flagged_years = np.where(np.abs(z_score) >= threshold)[0]
             for y in flagged_years:
                 start = interval + y * len_year
-                all_bursts.append(
-                    (start, start+length-1, z_score[y]))
-       
-        length += max(1, length//skip_factor)
-    
+                all_bursts.append((start, start + length - 1, z_score[y]))
+
+        length += max(1, length // skip_factor)
+
     return all_bursts
 
 
-def skipping_date(ts, n_year, threshold, len_year, agg_fn, skip_factor, min_length=1, max_length=365):
-    """
-    """
+def skipping_date(
+    ts, n_year, threshold, len_year, agg_fn, skip_factor, min_length=1, max_length=365
+):
+    """ """
     n = len(ts)
     v = np.copy(ts).reshape(n_year, len_year)
     all_bursts = []
@@ -114,11 +114,11 @@ def skipping_date(ts, n_year, threshold, len_year, agg_fn, skip_factor, min_leng
 
     for length in range(min_length, max_length + 1):
 
-        step = max(1, length//skip_factor)
+        step = max(1, length // skip_factor)
         for year in range(n_year):
             for obs in range(0, len_year, step):
                 start = year * len_year + obs
-                end = start + length 
+                end = start + length
                 if end > n:
                     break
                 v[year, obs] = agg_fn(ts[start:end])
@@ -134,13 +134,11 @@ def skipping_date(ts, n_year, threshold, len_year, agg_fn, skip_factor, min_leng
             column = v[:n_valid_years, interval]
             mean = np.add.reduce(column) / n_valid_years
             squared_mean = np.add.reduce(np.square(column)) / n_valid_years
-            std = np.sqrt(squared_mean - mean*mean)
+            std = np.sqrt(squared_mean - mean * mean)
             z_score = (column - mean) / std
             flagged_years = np.where(np.abs(z_score) >= threshold)[0]
             for y in flagged_years:
                 start = interval + y * len_year
-                all_bursts.append(
-                    (start, start+length-1, z_score[y]))
+                all_bursts.append((start, start + length - 1, z_score[y]))
 
-                
     return all_bursts

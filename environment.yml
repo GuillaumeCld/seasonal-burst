@@ -18,4 +18,5 @@ dependencies:
   - plotly
   - tabulate
   - cartopy
-
+  - pip:
+    - pymannkendall
