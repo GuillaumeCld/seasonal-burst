@@ -50,6 +50,57 @@ def exhaustive_search(
     return all_bursts
 
 
+
+def exhaustive_search_percentile(
+    ts, n_year, percentile_threshold, len_year, agg_fn, min_length=1, max_length=365
+):
+    """
+    Perform exhaustive search using a percentile-based threshold instead of z-score.
+
+    Args:
+        ts: Time series as a 1D numpy array.
+        n_year: Number of years in the dataset.
+        percentile_threshold: The percentile threshold (e.g. 95 for 95th percentile).
+        len_year: Number of observations per year.
+        agg_fn: Aggregation function for each sequence (e.g., np.sum, np.mean).
+        min_length: Minimum length of sequences to evaluate.
+        max_length: Maximum length of sequences to evaluate.
+    """
+    n = len(ts)
+    v = np.copy(ts).reshape(n_year, len_year)
+    all_bursts = []
+
+    for length in range(min_length, max_length + 1):
+        for year in range(n_year):
+            for obs in range(len_year):
+                start = year * len_year + obs
+                end = start + length
+                if end > n:
+                    break
+                v[year, obs] = agg_fn(ts[start:end])
+
+        max_sequence = len_year - length + 1
+        n_valid_years = n_year
+        for interval in range(max_sequence):
+            column = v[:n_valid_years, interval]
+            thresh = np.percentile(column, percentile_threshold)
+            flagged_years = np.where(column >= thresh)[0]
+            for y in flagged_years:
+                start = interval + y * len_year
+                all_bursts.append((start, start + length - 1, column[y]))
+
+        n_valid_years -= 1
+        for interval in range(max_sequence, len_year):
+            column = v[:n_valid_years, interval]
+            thresh = np.percentile(column, percentile_threshold)
+            flagged_years = np.where(column >= thresh)[0]
+            for y in flagged_years:
+                start = interval + y * len_year
+                all_bursts.append((start, start + length - 1, column[y]))
+
+    return all_bursts
+
+
 def skipping_length(
     ts, n_year, threshold, len_year, agg_fn, skip_factor, min_length=1, max_length=365
 ):

@@ -69,6 +69,9 @@ docs/api/
 ehthumbs.db
 Thumbs.db
 
+**/*.pdf
+*/*/*.pdf
+
 
 Data/ERA5_land/t2m_daily_avg_1950_2023.nc
 Data/ERA5_land/tp_daily_sum_1950_2023.nc
@@ -78,3 +81,16 @@ icdm-paper/results/grid_tradeoff_metrics_t2m.csv
 icdm-paper/results/grid_tradeoff_metrics.csv
 
 heat_stress_case_study/*.html
+
+
+Data/power/consommation-quotidienne-brute.csv
+Data/power/eco2mix-national-tr.csv
+Data/power/_C3_89volution_de_la_consommation_hebdomadaire_2025-03-07_16-54.csv
+Data/power/eco2mix-regional-cons-def.csv
+Data/power/pic-journalier-consommation-brute.csv
+Data/power/time_series.xlsx
+Data/power/time_series_15min_singleindex.csv
+Data/SST/norm.daily.aao.cdas.z700.19790101_current.csv
+heat_stress_case_study/nans.csv
+heat_stress_case_study/valeurs_mensuelles.csv
+.gitignore

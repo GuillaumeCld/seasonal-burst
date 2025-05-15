@@ -334,8 +334,9 @@ def compute_grid_bars(ts_date, grid_burst, coords):
     return daylies_hot, daylies_cold, series_hot, series_cold
 
 
-def compute_cc_stats(grid_burst, ccs, n_year, first_year, lat, lon, coords):
+def compute_cc_stats(grid, grid_burst, ccs, n_year, first_year, lat, lon, coords):
     cc_stats= []
+    # for the sources
     grid_start_5 = np.zeros((lat,lon))
     grid_start_5[:] = np.nan
     grid_start_10 = copy.deepcopy(grid_start_5)
@@ -347,24 +348,38 @@ def compute_cc_stats(grid_burst, ccs, n_year, first_year, lat, lon, coords):
         grid_start_15[i,j] = 0
         grid_start_20[i,j] = 0
         
-    for cc in ccs:
+    for iter, cc in enumerate(ccs):
         min_s = n_year*365
         max_e = -1
-        unique_series = []
-        for (i,j,burst_id) in cc:
+        unique_series = []  
+        deviations = []
+
+        for  (i,j,burst_id) in cc:
             if not (i,j) in unique_series:
                 unique_series.append((i,j))
             burst = grid_burst[i,j][burst_id]
-            s, e = burst[:2]
+            s, e, z = burst
 
             min_s = min(min_s, s)
             max_e = max(max_e, e)
+
+            ts = grid[:, i,j].reshape(n_year, 365)
+            average = np.mean(ts, axis=0)
+            full_ts = np.tile(average, n_year)
+
+            deviation =  grid[s:e+1, i,j] - full_ts[s:e+1]
+            # if np.max(deviation) < 0:
+            #     print(f"{burst}, {i}, {j}, {burst_id}")
+            # z_deviation = np.average((deviation - np.mean(deviation)) / np.std(deviation))
+            deviations.extend(deviation)
+            #print(iter, i, j , e-s+1, deviatio, z)
 
         length = max_e-min_s+1
         densities = np.zeros(length)
         for (i,j,burst_id) in cc:
             s, e, z = burst
             if z > 0:
+                # for the sources
                 if s <= min_s + max(0,5*length/100):
                     grid_start_5[i,j] += 1
                 if s <= min_s + max(0,10*length/100):
@@ -378,8 +393,8 @@ def compute_cc_stats(grid_burst, ccs, n_year, first_year, lat, lon, coords):
                 
         nb_series = len(unique_series)
         start_year = first_year + min_s // 365    
-        cc_stats.append([length, nb_series, start_year, np.sign(burst[-1])])
-
+        cc_stats.append([length, nb_series, start_year, np.sign(burst[-1]), np.average(deviations)])
+        
     return cc_stats, grid_start_5, grid_start_10, grid_start_15, grid_start_20
 
 
@@ -472,7 +487,7 @@ def compute_daily_zscore(ts, n_year, len_year):
             z_score = (column - mean) / std
             for y, z in enumerate(z_score):
                 start = i + y*len_year
-                for day in range(size):
+                for day in range(1):
                     abs_val = np.abs(z_per_day[start+day])
                     if abs_val < np.abs(z):
                         z_per_day[start+day] = z
@@ -487,14 +502,76 @@ def compute_daily_zscore(ts, n_year, len_year):
             z_score = (column - mean) / std
             for y, z in enumerate(z_score):
                 start = i + y*len_year
-                for day in range(size):
+                for day in range(1):
                     abs_val = np.abs(z_per_day[start+day])
                     if abs_val < np.abs(z):
                         z_per_day[start+day] = z
     return z_per_day
 
 
-    
+  
+@njit((float64[:], int64, int64))
+def compute_daily_zscore_all_lengths(ts, n_year, len_year):
+    n = len(ts)
+    v = np.copy(ts).reshape(n_year, len_year)
+
+    n_lengths = 365
+    z_per_day = np.zeros((n_lengths, len(ts)))
+    z_per_day[:,:] = np.nan
+
+    # Finding burst of length 1 (day) only the z-score are needed
+    for i in range(len_year):
+        column = v[:n_year, i]
+        mean = np.sum(column) / n_year
+        squared_mean = np.sum(np.square(column)) / n_year
+        std = np.sqrt(squared_mean - mean*mean)
+        z_score = (column - mean) / std
+        for y, z in enumerate(z_score):
+            start = i + y*len_year
+            z_per_day[0, start] = z
+
+    end_index = n
+    # Finding burst of length 2 <= l <= 256
+    for size in range(2, 366):
+        end_index -= 1
+        e_span = end_index % len_year
+        end_year = end_index // len_year
+        # Compute aggreagates, vectorized by year
+        for j in range(end_year):
+            start = j * len_year + size - 1
+            end = start + len_year
+            v[j, :len_year] += ts[start:end]
+        # Last year special case to handle interval out of bounds
+        start = end_year * len_year + size - 1
+        end = start + e_span
+        v[end_year, :e_span] += ts[start:end]
+        # Z-score computation
+        # First loop for the condition: interval < e_span
+        # for those intervals the last valid year is included
+        n_valid_years = end_year + 1
+        for i in range(e_span):
+            column = v[:n_valid_years, i]
+            mean = np.sum(column) / n_valid_years
+            squared_mean = np.sum(np.square(column)) / n_valid_years
+            std = np.sqrt(squared_mean - mean*mean)
+            z_score = (column - mean) / std
+            for y, z in enumerate(z_score):
+                start = i + y*len_year
+                z_per_day[size-1, start] = z
+        # Second loop for the condition: interval >= e_span
+        # for those intervals the last valid year is excluded
+        n_valid_years = end_year
+        for i in range(e_span, len_year):
+            column = v[:n_valid_years, i]
+            mean = np.sum(column) / n_valid_years
+            squared_mean = np.sum(np.square(column)) / n_valid_years
+            std = np.sqrt(squared_mean - mean*mean)
+            z_score = (column - mean) / std
+            for y, z in enumerate(z_score):
+                start = i + y*len_year
+                z_per_day[size-1, start] = z
+    return z_per_day
+  
 
 @njit((float64[:], int32, int32, int32))
 def SWT_per_year(ts: np.ndarray, n_year: int, len_year: int, n_level=9):
@@ -520,10 +597,10 @@ def SWT_per_year(ts: np.ndarray, n_year: int, len_year: int, n_level=9):
         n_bricks_wavelet = len_year // size
         n_bricks = n_bricks_wavelet * 2
 
-        #if size // 2 + n_bricks_wavelet * size < len_year:
-        #    n_bricks += 2
-        #else:
-        #    n_bricks += 1
+        if size // 2 + n_bricks_wavelet * size < len_year:
+           n_bricks += 2
+        else:
+           n_bricks += 1
         ns_bricks[i] = n_bricks
 
     # For each level of the SWT
@@ -637,7 +714,7 @@ def plot_bricks_with_z_score(z_score_SWT, year, len_year,  abs_max, ax, a=8):
         #else:
         #    n_bricks += 1
 
-        for j in range(0, n_bricks, 1):
+        for j in range(0, len(z_score_SWT[i][year,:]), 1):
             val = z_score_SWT[i][year, j]
 
             xy = (j * size//2, i+1+(j % 2)*0.4)

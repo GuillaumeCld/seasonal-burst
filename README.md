@@ -16,6 +16,17 @@ This repository contains research code and experiments for burst detection in ti
   - Statistical wavelet transform
   - Visualization tools
 
+- Case studies 
+  - Mediterranean Sea Surface Temperature
+  - Paris heat stress index (WBGT) 
+  - Link to temperature or stress bursts to mortality 
+  - National electricity consumption
+
+- Performance evaluations
+  - Scaling of all algorithms
+  - Tradeoff between exhaustive and heuristic search
+  - Numerical precision
+
 ## Installation
 
 ### Using Conda (Recommended)
@@ -53,11 +64,20 @@ python -m pip install .
 │   │   ├── seasonal_burst/   # Burst detection algorithms
 │   │   └── utils/            # Utility functions
 │   └── test/                 # Test suite
+├── Data/                     # Data files
+│   ├── ERA5_land/            # ERA5 land data
+│   ├── power/                # Power data
+│   ├── SST/                  # Sea Surface Temperature data
 ├── docs/                     # Documentation
 ├── examples/                 # Example notebooks and scripts
-├── grl-case-study/           # GRL paper case study
-├── icdm-paper/               # ICDM paper materials
-└── sigmod-demo/              # SIGMOD demonstration
+├── experiments/              # Experiment scripts for performance evaluation
+├── case-studies/             # Case studies
+│   ├── mediterranean/        # Mediterranean Sea Surface Temperature
+│   ├── paris/                # Paris heat stress index (WBGT)
+│   ├── mortality/            # Link to temperature or stress bursts to mortality
+│   └── electricity/          # National electricity consumption
+├── environment.yml           # Conda environment file
+├── pyproject.toml            # Python packaging configuration
 ```
 
 ## Development
@@ -82,3 +102,12 @@ The project uses Black for code formatting and isort for import sorting. To form
 black core/src
 isort core/src
 ```
+
+
+## Data
+The data used in the case studies is available in the `Data/` directory. The data files are organized into subdirectories based on the type of data.
+- `ERA5_land/`: Contains ERA5 land data files, downloaded from the [Copernicus Climate Change Service](https://climate.copernicus.eu/).
+- `SST/`: Contains Sea Surface Temperature data files, downloaded from the [Copernicus Climate Change Service](https://climate.copernicus.eu/).
+- `WBGT/`: Contains WBGT data files, downloaded from the [WBGT website](https://www.wbgt.fr/).
+- `mortality/`: Contains mortality data files, downloaded from the [INSEE website](https://www.insee.fr/en/accueil).
+- `power/`: Contains electricity consumption data files, downloaded from the [RTE website](https://data.rte-france.com/).
