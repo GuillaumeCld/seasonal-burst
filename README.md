@@ -1,19 +1,21 @@
 # Burst Research Project
 
-This repository contains research code and experiments for burst detection in time series data. The project implements various algorithms for detecting and analyzing seasonal bursts in temporal data.
+This repository contains research code and experiments for the seasonal burst detection in time series data. The project implements efficients algorithms for detecting and analyzing seasonal bursts in temporal data.
 
 ## Features
 
 - Seasonal burst detection using multiple algorithms:
-  - Exhaustive search for seasonal bursts
+  - Exhaustive search for seasonal bursts with:
+    - a generic aggregation function
+    - fast computation exclusive to the sum
   - Heuristic search with skipping 
   - Spatial burst detection with naive parallelization
-  - Online detection with Welford's method
+  - Online detection with incremental one pass algorithm
+
 
 - Utility functions for:
   - Burst post-processing
-  - Connected components analysis
-  - Statistical wavelet transform
+  - Connected components analysis on gridded data
   - Visualization tools
 
 - Case studies 
@@ -68,8 +70,8 @@ python -m pip install .
 │   ├── ERA5_land/            # ERA5 land data
 │   ├── power/                # Power data
 │   ├── SST/                  # Sea Surface Temperature data
-├── docs/                     # Documentation
-├── examples/                 # Example notebooks and scripts
+│   ├── Paris/                # Paris heat stress index (WBGT) and temperature data
+│   └── mortality/            # Mortality data
 ├── experiments/              # Experiment scripts for performance evaluation
 ├── case-studies/             # Case studies
 │   ├── mediterranean/        # Mediterranean Sea Surface Temperature
@@ -106,8 +108,53 @@ isort core/src
 
 ## Data
 The data used in the case studies is available in the `Data/` directory. The data files are organized into subdirectories based on the type of data.
-- `ERA5_land/`: Contains ERA5 land data files, downloaded from the [Copernicus Climate Change Service](https://climate.copernicus.eu/).
-- `SST/`: Contains Sea Surface Temperature data files, downloaded from the [Copernicus Climate Change Service](https://climate.copernicus.eu/).
-- `WBGT/`: Contains WBGT data files, downloaded from the [WBGT website](https://www.wbgt.fr/).
-- `mortality/`: Contains mortality data files, downloaded from the [INSEE website](https://www.insee.fr/en/accueil).
-- `power/`: Contains electricity consumption data files, downloaded from the [RTE website](https://data.rte-france.com/).
+- `ERA5_land/`: Contains ERA5 land data files, downloaded from the [Copernicus Climate Change Service](https://cds.climate.copernicus.eu/datasets/reanalysis-era5-single-levels?tab=overview).
+- `SST/`: Contains Sea Surface Temperature data files, downloaded from the [Copernicus Climate Change Service](https://cds.climate.copernicus.eu/datasets/reanalysis-era5-single-levels?tab=overview).
+- `WBGT/`: Contains WBGT data files, downloaded from the [Copernicus Climate Change Service](https://cds.climate.copernicus.eu/datasets/reanalysis-era5-single-levels?tab=overview).
+- `mortality/`: Contains mortality data files, downloaded from the [Data gouv website](https://www.data.gouv.fr/fr/datasets/agregation-des-fichiers-des-personnes-decedees/).
+- `power/`: Contains electricity consumption data files, downloaded from the [Data gouv website](https://www.data.gouv.fr/fr/datasets/consommation-quotidienne-brute/).
+
+
+## Experiments
+
+To run the experiments, run the performance evaluation script:
+
+```bash
+python run_experiments.py
+```
+
+This will execute the performance evaluation scripts and generate the results.
+The results will be saved in the `experiments/results/` directory.
+The results include:
+- Scaling of all algorithms
+- Tradeoff between exhaustive and heuristic search
+- Numerical precision
+- Performance of the online detection algorithm
+
+Figures and tables can be generated with the notebook `experiments/paper_figures.ipynb`.
+
+To run a specific experiment, run the correspoding command:
+```bash 
+python experiments/experiments/run_all.py --experiments <experiment_name>
+```
+where `<experiment_name>` is the name of the experiment you want to run.
+The available experiments are:
+  -  `all`: Run all experiments
+  - `exhaustive_algo_scaling`: Scaling of the exhaustive algorithm
+  - `numerical`: Numerical precision of the exhaustive algorithm
+  - `skipping_tradeoff`: Tradeoff between exhaustive and heuristic search
+  - `grid_skipping_tradeoff`: Tradeoff between exhaustive and heuristic search with grid skipping
+  - `sum_computation`: Performance of the computation of the sum
+  - `online_scaling`: Scaling of the online detection algorithm
+
+
+## Case Studies
+
+The case studies are located in the `case-studies/` directory. Each case study includes Jupyter notebooksto analyze the data and apply the burst detection algorithms. The case studies include:
+- `mediterranean/`: Analysis of the Mediterranean Sea Surface Temperature data. The notebook includes:
+  - `averaged_sst.ipynb`: Analysis of the averaged SST data
+  - `grid_sst.ipynb`: Analysis of the gridded SST data
+  - `cluster_grid.ipynb`: Visualization of the clusters' contours
+- `heat_stress/`: Analysis of the Paris heat stress index (WBGT) data
+- `mortality/`: Analysis of the link between temperature or stress bursts and mortality
+- `power/`: Analysis of the national electricity consumption data
