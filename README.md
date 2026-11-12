@@ -178,7 +178,7 @@ If you use this work in your research, please cite:
       publisher={Wiley Online Library}
     }
     ```
-- Athmospheric application paper
+- Climate letter
     > Brouillet, A., Coulaud, G., Shasha, D., Akbarinia, R., & Masseglia, F. (2025). ClimBurst: A novel method to detect climatological anomalies over time and space. Geophysical Research Letters, 52(19), e2025GL117095. https://inria.hal.science/hal-05379952v1.
     ```bibtex
     @article{brouillet2025climburst,
