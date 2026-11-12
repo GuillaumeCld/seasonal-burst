@@ -158,3 +158,42 @@ The case studies are located in the `case-studies/` directory. Each case study i
 - `heat_stress/`: Analysis of the Paris heat stress index (WBGT) data
 - `mortality/`: Analysis of the link between temperature or stress bursts and mortality
 - `power/`: Analysis of the national electricity consumption data
+
+
+## Citation
+
+If you use this work in your research, please cite:
+
+- Algorithm paper
+    > Guillaume Coulaud, Audrey Brouillet, Reza Akbarinia, Florent Masseglia, Dennis Shasha. Efficient Detection of Seasonal Bursts: Applications to Climate Time Series. DEXA 2026 - 37th International Conference on Database and Expert Systems Applications, Aug 2026, Graz, Austria. pp.129-143. https://inria.hal.science/hal-05723497v1.
+    ```bibtex
+    @article{brouillet2025climburst,
+      title={ClimBurst: A novel method to detect climatological anomalies over time and space},
+      author={Brouillet, Audrey and Coulaud, Guillaume and Shasha, Dennis and Akbarinia, Reza and Masseglia, Florent},
+      journal={Geophysical Research Letters},
+      volume={52},
+      number={19},
+      pages={e2025GL117095},
+      year={2025},
+      publisher={Wiley Online Library}
+    }
+    ```
+- Athmospheric application paper
+    > Brouillet, A., Coulaud, G., Shasha, D., Akbarinia, R., & Masseglia, F. (2025). ClimBurst: A novel method to detect climatological anomalies over time and space. Geophysical Research Letters, 52(19), e2025GL117095. https://inria.hal.science/hal-05379952v1.
+    ```bibtex
+    @article{brouillet2025climburst,
+      title={ClimBurst: A novel method to detect climatological anomalies over time and space},
+      author={Brouillet, Audrey and Coulaud, Guillaume and Shasha, Dennis and Akbarinia, Reza and Masseglia, Florent},
+      journal={Geophysical Research Letters},
+      volume={52},
+      number={19},
+      pages={e2025GL117095},
+      year={2025},
+      publisher={Wiley Online Library}
+    }
+    ```
+---
+
+## License
+
+This project is licensed under the [CeCILL Free Software License Agreement](LICENSE) (compatible with GNU GPL).
